@@ -5,6 +5,7 @@ import { homedir } from "os";
 import { join, dirname } from "path";
 import { promisify } from "util";
 import { constants } from "fs";
+import { useState } from "react";
 
 const execAsync = promisify(exec);
 
@@ -156,6 +157,9 @@ export default function CodeInFolder() {
   const preferences = getPreferenceValues<Preferences>();
   const expandedBasePath = expandPath(preferences.basePath);
 
+  // Track the current title as the user types
+  const [title, setTitle] = useState("");
+
   // Validate preferences early to provide warnings
   const programValidation = validateProgramName(preferences.programName);
   const hasConfigIssue = !programValidation.valid;
@@ -177,7 +181,12 @@ export default function CodeInFolder() {
     displayPathParts.push(`${month}-${day}`);
   }
 
-  displayPathParts.push("[TITLE]");
+  // Process the title for display if it has content
+  const processedTitle = title.trim()
+    ? processTitle(title, preferences.sanitizePathName, preferences.truncatePathName)
+    : "[TITLE]";
+
+  displayPathParts.push(processedTitle);
 
   const displayPath = displayPathParts.join("/");
 
@@ -188,8 +197,8 @@ export default function CodeInFolder() {
     if (!title || title.trim() === "") {
       await showToast({
         style: Toast.Style.Failure,
-        title: "Error",
-        message: "Please enter a project title",
+        title: "Missing Project Title",
+        message: "Please enter a project title to complete the folder path",
       });
       return;
     }
@@ -319,10 +328,15 @@ export default function CodeInFolder() {
         id="title"
         title="Project Title"
         placeholder="Enter your project name"
+        value={title}
+        onChange={setTitle}
       />
       <Form.Description
         title="Folder Path"
         text={displayPath}
+      />
+      <Form.Description
+        text={`This path will be created and opened by ${preferences.programName}`}
       />
     </Form>
   );
