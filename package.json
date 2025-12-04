@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/vicinaehq/vicinae/refs/heads/main/extra/schemas/extension.json",
   "name": "code-in-folder",
   "title": "Code in Folder",
-  "description": "Create a dated folder in a configurable base directory with YEAR/MM-DD/TITLE structure and open in your preferred code editor",
+  "description": "Create a folder in a configurable base directory and open in your preferred code editor",
   "categories": ["Productivity"],
   "license": "MIT",
   "author": "benzipperer",
@@ -13,8 +13,8 @@
     {
       "name": "code-in-folder",
       "title": "Code in Folder",
-      "subtitle": "Create and open a dated project folder",
-      "description": "Creates a folder with YEAR/MM-DD/TITLE structure in your configured base directory and opens it in your preferred code editor",
+      "subtitle": "Create and open a project folder",
+      "description": "Creates a folder in your configured base directory and opens it in your preferred code editor",
       "mode": "view"
     }
   ],
