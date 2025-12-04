@@ -1,25 +1,12 @@
 # Code in Folder
 
-A Vicinae extension that creates a dated folder in your configured directory and opens it in your preferred code editor.
+A Vicinae extension that creates a folder in your configured directory and opens it in your preferred code editor.
 
 ## Features
 
 - Creates a flexible folder structure: `[BASE_PATH]/[YEAR]/[MM-DD]/[TITLE]`
 - Configurable base path (defaults to `~/playground`)
 - Configurable code editor (defaults to `positron`, can be set to `code` for VS Code or any other editor)
-- Automatically uses the current year, month, and day
-- Opens the newly created folder in a new editor window
-- Simple form interface for entering project titles
-- **Customizable path structure** - enable or disable:
-  - Year subdirectory (YEAR/)
-  - Month-day subdirectory (MM-DD/)
-  - Title sanitization (converts to snake_case)
-  - Title truncation (limits to 50 characters or 10 words)
-- Optional title sanitization features:
-  - Converts to snake_case (lowercase with underscores)
-  - Removes special characters
-  - Truncates to max 50 characters or 10 words
-  - Example: "My Cool Project 2024!" becomes "my_cool_project_2024"
 
 ## Usage
 
@@ -45,7 +32,6 @@ You can customize where folders are created and which editor to use:
    - **Add Month-Day to Path**: Include month-day subdirectory in path (default: enabled)
    - **Sanitize Path Name**: Convert title to snake_case and remove special characters (default: enabled)
    - **Truncate Path Name**: Limit title to 50 characters or 10 words (default: enabled)
-5. Settings support `~` for your home directory and persist across sessions
 
 ### Folder Structure Examples
 
@@ -81,14 +67,13 @@ The extension creates folders based on your settings. Here are some examples:
   └── ...
 ```
 
-**Sanitization disabled**:
+**Sanitization**:
 - With sanitization: `my_cool_project_2024`
 - Without sanitization: `My Cool Project 2024!` (preserves original formatting)
 
 ## Installation
 
 ```bash
-cd ~/.local/bin/vicinae-extensions/code-in-folder
 npm install
 npm run dev
 ```
@@ -101,9 +86,8 @@ npm run build
 
 ## Requirements
 
-- Vicinae launcher
+- [Vicinae](https://docs.vicinae.com/) launcher
 - Your preferred code editor installed and available in PATH (e.g., Positron, VS Code, Cursor)
-- Node.js and npm
 
 ## Inspiration
 
