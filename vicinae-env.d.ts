@@ -6,11 +6,17 @@
  */
 
 type ExtensionPreferences = {
-  /** Base Directory Path - The base directory where folders will be created. Leave empty to use home directory. Supports ~ for home, relative paths, or absolute paths like / or /projects */
-	"basePath": string;
+  /** Preferred Editor - Select the editor to open projects with */
+	"programName"?: "positron" | "code" | "cursor";
 
-	/** Editor Program Name - The name of the program to open folders with (e.g., 'code' for VS Code, 'positron' for Positron) */
-	"programName"?: string;
+	/** Terminal Emulator - Select your preferred terminal emulator. Choose 'Custom' to specify a custom command with arguments. */
+	"terminalPreset"?: "auto-detect" | "gnome-terminal" | "konsole" | "alacritty" | "kitty" | "ghostty" | "tilix" | "wezterm" | "xterm" | "custom";
+
+	/** Custom Terminal Command - Custom terminal command template. Use {path} as placeholder for the folder path. Example: ghostty --working-directory={path} */
+	"customTerminalCommand": string;
+
+	/** Base Directory Path - The base directory where folders will be created. Leave empty to use home directory. Supports ~ for home, relative paths, or absolute paths like / or /projects */
+	"basePath": string;
 
 	/** Add Year to Path - When enabled, creates folders in YEAR/MM-DD/TITLE structure. When disabled, uses MM-DD/TITLE or just TITLE structure. */
 	"addYearToPath": boolean;
@@ -32,11 +38,21 @@ declare namespace Preferences {
 	export type CodeInNewFolder = ExtensionPreferences & {
 		
 	}
+
+	/** Command: Search Recent Projects */
+	export type SearchRecentProjects = ExtensionPreferences & {
+		
+	}
 }
 
 declare namespace Arguments {
   /** Command: Code in New Folder */
 	export type CodeInNewFolder = {
+		
+	}
+
+	/** Command: Search Recent Projects */
+	export type SearchRecentProjects = {
 		
 	}
 }

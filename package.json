@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/vicinaehq/vicinae/refs/heads/main/extra/schemas/extension.json",
-  "name": "code-in-new-folder",
-  "title": "Code in New Folder",
-  "description": "Create a folder in a configurable base directory and open in your preferred code editor",
+  "name": "project-launcher",
+  "title": "Project Launcher",
+  "description": "Open existing or new projects in your preferred editor.",
   "categories": ["Productivity"],
   "license": "MIT",
   "author": "benzipperer",
@@ -16,9 +16,97 @@
       "subtitle": "Create and open a project folder",
       "description": "Creates a folder in your configured base directory and opens it in your preferred code editor",
       "mode": "view"
+    },
+    {
+      "name": "search-recent-projects",
+      "title": "Search Recent Projects",
+      "subtitle": "Find and open recent projects",
+      "description": "Search and open recently accessed projects from your preferred editor's workspace history",
+      "mode": "view"
     }
   ],
   "preferences": [
+    {
+      "type": "dropdown",
+      "name": "programName",
+      "title": "Preferred Editor",
+      "description": "Select the editor to open projects with",
+      "default": "positron",
+      "required": true,
+      "data": [
+        {
+          "title": "Positron",
+          "value": "positron"
+        },
+        {
+          "title": "VS Code",
+          "value": "code"
+        },
+        {
+          "title": "Cursor",
+          "value": "cursor"
+        }
+      ]
+    },
+    {
+      "type": "dropdown",
+      "name": "terminalPreset",
+      "title": "Terminal Emulator",
+      "description": "Select your preferred terminal emulator. Choose 'Custom' to specify a custom command with arguments.",
+      "default": "auto-detect",
+      "required": true,
+      "data": [
+        {
+          "title": "Auto-detect",
+          "value": "auto-detect"
+        },
+        {
+          "title": "GNOME Terminal",
+          "value": "gnome-terminal"
+        },
+        {
+          "title": "Konsole (KDE)",
+          "value": "konsole"
+        },
+        {
+          "title": "Alacritty",
+          "value": "alacritty"
+        },
+        {
+          "title": "Kitty",
+          "value": "kitty"
+        },
+        {
+          "title": "Ghostty",
+          "value": "ghostty"
+        },
+        {
+          "title": "Tilix",
+          "value": "tilix"
+        },
+        {
+          "title": "WezTerm",
+          "value": "wezterm"
+        },
+        {
+          "title": "xterm",
+          "value": "xterm"
+        },
+        {
+          "title": "Custom",
+          "value": "custom"
+        }
+      ]
+    },
+    {
+      "type": "textfield",
+      "name": "customTerminalCommand",
+      "title": "Custom Terminal Command",
+      "description": "Custom terminal command template. Use {path} as placeholder for the folder path. Example: ghostty --working-directory={path}",
+      "placeholder": "ghostty --working-directory={path}",
+      "default": "",
+      "required": false
+    },
     {
       "type": "textfield",
       "name": "basePath",
@@ -27,15 +115,6 @@
       "placeholder": "~",
       "default": "",
       "required": false
-    },
-    {
-      "type": "textfield",
-      "name": "programName",
-      "title": "Editor Program Name",
-      "description": "The name of the program to open folders with (e.g., 'code' for VS Code, 'positron' for Positron)",
-      "placeholder": "positron",
-      "default": "positron",
-      "required": true
     },
     {
       "type": "checkbox",

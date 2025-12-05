@@ -16,6 +16,8 @@ interface FormValues {
 interface Preferences {
   basePath: string;
   programName: string;
+  terminalPreset: string;
+  customTerminalCommand: string;
   addYearToPath: boolean;
   addMonthDayToPath: boolean;
   sanitizePathName: boolean;
@@ -137,6 +139,107 @@ async function checkCommandExists(command: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Gets the display name for a terminal preset
+ */
+function getTerminalDisplayName(preset: string): string {
+  const displayNames: Record<string, string> = {
+    "gnome-terminal": "GNOME Terminal",
+    "konsole": "Konsole",
+    "alacritty": "Alacritty",
+    "kitty": "Kitty",
+    "ghostty": "Ghostty",
+    "tilix": "Tilix",
+    "wezterm": "WezTerm",
+    "xterm": "xterm",
+  };
+
+  return displayNames[preset] || "terminal";
+}
+
+/**
+ * Gets the terminal command configuration for a given preset
+ */
+function getTerminalConfig(preset: string, folderPath: string): { command: string; fullCommand: string } | null {
+  const configs: Record<string, { command: string; template: string }> = {
+    "gnome-terminal": { command: "gnome-terminal", template: `gnome-terminal --working-directory="${folderPath}"` },
+    "konsole": { command: "konsole", template: `konsole --workdir "${folderPath}"` },
+    "alacritty": { command: "alacritty", template: `alacritty --working-directory "${folderPath}"` },
+    "kitty": { command: "kitty", template: `kitty --directory "${folderPath}"` },
+    "ghostty": { command: "ghostty", template: `ghostty --working-directory="${folderPath}"` },
+    "tilix": { command: "tilix", template: `tilix --working-directory="${folderPath}"` },
+    "wezterm": { command: "wezterm", template: `wezterm start --cwd "${folderPath}"` },
+    "xterm": { command: "xterm", template: `xterm -e "cd \\"${folderPath}\\" && exec $SHELL"` },
+  };
+
+  const config = configs[preset];
+  if (config) {
+    return {
+      command: config.command,
+      fullCommand: config.template,
+    };
+  }
+  return null;
+}
+
+/**
+ * Opens a folder in the system's terminal
+ * Uses preset configuration or custom command template
+ */
+async function openInTerminal(folderPath: string, preset: string, customCommand: string): Promise<void> {
+  // Handle custom terminal command
+  if (preset === "custom") {
+    if (!customCommand || customCommand.trim() === "") {
+      throw new Error("Custom terminal command is not configured. Please set it in extension settings.");
+    }
+
+    // Replace {path} placeholder with actual folder path
+    const fullCommand = customCommand.replace(/\{path\}/g, `"${folderPath}"`);
+
+    // Extract the command name (first word) for existence check
+    const commandName = customCommand.trim().split(/\s+/)[0];
+
+    if (!(await checkCommandExists(commandName))) {
+      throw new Error(`Custom terminal command '${commandName}' not found. Please check your configuration.`);
+    }
+
+    await execAsync(fullCommand);
+    return;
+  }
+
+  // Handle specific preset
+  if (preset !== "auto-detect") {
+    const config = getTerminalConfig(preset, folderPath);
+
+    if (config) {
+      if (await checkCommandExists(config.command)) {
+        await execAsync(config.fullCommand);
+        return;
+      } else {
+        throw new Error(`${preset} is not installed or not in your PATH. Please install it or choose a different terminal.`);
+      }
+    }
+  }
+
+  // Auto-detect: try common terminals in order of preference
+  const terminalsToTry = ["gnome-terminal", "konsole", "alacritty", "kitty", "ghostty", "tilix", "wezterm", "xterm"];
+
+  for (const terminalPreset of terminalsToTry) {
+    const config = getTerminalConfig(terminalPreset, folderPath);
+    if (config && (await checkCommandExists(config.command))) {
+      try {
+        await execAsync(config.fullCommand);
+        return;
+      } catch {
+        // Try next terminal
+        continue;
+      }
+    }
+  }
+
+  throw new Error("No supported terminal emulator found. Please install a terminal (gnome-terminal, konsole, alacritty, etc.) or configure a custom terminal in settings.");
 }
 
 /**
@@ -351,11 +454,136 @@ export default function CodeInFolder() {
     }
   }
 
+  async function handleSubmitAndOpenInTerminal(values: FormValues) {
+    const { title } = values;
+
+    // Validate title input
+    if (!title || title.trim() === "") {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Missing Project Title",
+        message: "Please enter a project title to complete the folder path",
+      });
+      return;
+    }
+
+    // Process the title based on preferences
+    const processedTitle = processTitle(title, preferences.sanitizePathName, preferences.truncatePathName);
+
+    if (!processedTitle) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Invalid Title",
+        message: "Title must contain at least one valid character",
+      });
+      return;
+    }
+
+    try {
+      // Get current date
+      const now = new Date();
+      const year = String(now.getFullYear());
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const dateFolder = `${month}-${day}`;
+
+      // Construct the full path based on preferences and override
+      const isUsingOverride = overrideBasePath.trim() !== "";
+      const effectiveBasePath = isUsingOverride
+        ? expandPath(overrideBasePath.trim())
+        : expandedBasePath;
+
+      let pathParts = [effectiveBasePath];
+
+      // Only add year/date subdirectories if NOT using override
+      if (!isUsingOverride) {
+        if (preferences.addYearToPath) {
+          pathParts.push(year);
+        }
+
+        if (preferences.addMonthDayToPath) {
+          pathParts.push(dateFolder);
+        }
+      }
+
+      pathParts.push(processedTitle);
+
+      const fullPath = join(...pathParts);
+
+      // Create the directory (recursively creates parent directories)
+      try {
+        await mkdir(fullPath, { recursive: true });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        await showToast({
+          style: Toast.Style.Failure,
+          title: "Error Creating Folder",
+          message: `Cannot create directory: ${errorMessage}. Check base path in settings.`,
+        });
+        return;
+      }
+
+      await showToast({
+        style: Toast.Style.Success,
+        title: "Folder Created",
+        message: processedTitle !== title ? `Created as: ${processedTitle}` : `Created ${fullPath}`,
+      });
+
+      // Open in terminal
+      try {
+        await openInTerminal(fullPath, preferences.terminalPreset, preferences.customTerminalCommand);
+        await closeMainWindow();
+      } catch (error) {
+        let errorMessage = "Failed to open terminal";
+
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+
+        await showToast({
+          style: Toast.Style.Failure,
+          title: "Error Opening Terminal",
+          message: errorMessage,
+        });
+      }
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Error",
+        message: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    }
+  }
+
+  // Map program name to properly capitalized editor name
+  const editorName = (() => {
+    switch (preferences.programName.toLowerCase()) {
+      case "positron":
+        return "Positron";
+      case "code":
+        return "VS Code";
+      case "cursor":
+        return "Cursor";
+      default:
+        return preferences.programName;
+    }
+  })();
+
+  // Get terminal action title based on preset
+  const terminalActionTitle = (() => {
+    if (preferences.terminalPreset === "auto-detect" || preferences.terminalPreset === "custom") {
+      return "Open folder in terminal";
+    }
+    const terminalName = getTerminalDisplayName(preferences.terminalPreset);
+    return `Open folder in ${terminalName}`;
+  })();
+
   return (
     <Form
       actions={
         <ActionPanel>
-          <Action.SubmitForm title="Create Folder" onSubmit={handleSubmit} />
+          <Action.SubmitForm title={`Open folder in ${editorName}`} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={terminalActionTitle} onSubmit={handleSubmitAndOpenInTerminal} />
           <Action.Open
             title="Open Extension Settings"
             target="vicinae://extensions/code-in-new-folder"
@@ -391,7 +619,7 @@ export default function CodeInFolder() {
         onChange={setOverrideBasePath}
       />
       <Form.Description
-        text={`This path will be created and opened by ${preferences.programName}`}
+        text={`This path will be created and opened by ${editorName}`}
       />
     </Form>
   );

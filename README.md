@@ -1,26 +1,47 @@
-# Code in New Folder
+# Project Launcher
 
-A Vicinae extension that creates a folder in your configured directory and opens it in your preferred code editor.
+A Vicinae extension that helps you quickly create new projects or open existing ones in your preferred code editor.
+
+![Create new folder and open it in the preferred editor](assets/code_in_new_folder.png)
+
+![Search recent projects and open them](assets/search_recent_projects.png)
 
 ## Features
 
+### Code in New Folder
+Create new project folders with a flexible, organized structure:
 - Creates a flexible folder structure: `[BASE_PATH]/[YEAR]/[MM-DD]/[TITLE]`
   - Year and date are optional
 - Configurable base path with flexible options:
   - Leave empty to use your home directory
   - Use `~/playground` for home-relative paths
   - Use absolute paths like `/` or `/projects` for specific locations
-- Configurable code editor (defaults to `positron`, can be set to `code` for VS Code or any other editor)
+- Temporarily override the default base path if desired
+- Configurable code editor (currently supports Positron, VS Code, and Cursor)
+
+### Search Recent Projects
+Quickly find and open your recent projects:
+- Searches your editor's workspace history
+- Displays recently accessed projects
+- Opens projects directly in your preferred editor
 
 ## Usage
+
+### Creating a New Project
 
 1. Launch Vicinae and search for "Code in New Folder"
 2. Enter your project title
 3. Press Enter to create the folder and open it in your configured editor
 
+### Opening Recent Projects
+
+1. Launch Vicinae and search for "Search Recent Projects"
+2. Browse or search through your recently accessed projects
+3. Select a project to open it in your configured editor
+
 ## Configuration
 
-You can customize where folders are created and which editor to use:
+You can customize your preferred editor and control how new project folders are created:
 
 ### Accessing Settings
 
@@ -28,13 +49,13 @@ You can customize where folders are created and which editor to use:
    - Search for and run "open settings" command, **OR**
    - Press **Ctrl + Comma** while Vicinae is active
 2. Navigate to the **Extensions** tab
-3. Find "Code in New Folder" in the extensions list
+3. Find "Project Launcher" in the extensions list
 4. Configure the settings:
-   - **Base Directory Path**: Where folders will be created. Options:
+   - **Preferred Editor**: Choose which editor to use (Positron, VS Code, or Cursor). This applies to both creating new projects and opening recent projects.
+   - **Base Directory Path**: Where new folders will be created. Options:
      - Leave **empty** to use your home directory (default)
      - Use `~/playground` or `~/dev/experiments` for home-relative paths
      - Use absolute paths like `/projects` or `/` for specific locations
-   - **Editor Program Name**: The command to open folders (e.g., `code` for VS Code, `positron` for Positron, `cursor` for Cursor)
    - **Add Year to Path**: Include year subdirectory in path (default: enabled)
    - **Add Month-Day to Path**: Include month-day subdirectory in path (default: enabled)
    - **Sanitize Path Name**: Convert title to snake_case and remove special characters (default: enabled)
@@ -94,19 +115,6 @@ The extension creates folders based on your settings. Here are some examples:
 - With sanitization: `my_cool_project_2024`
 - Without sanitization: `My Cool Project 2024!` (preserves original formatting)
 
-## Installation
-
-```bash
-npm install
-npm run dev
-```
-
-For production build:
-
-```bash
-npm run build
-```
-
 ## Requirements
 
 - [Vicinae](https://docs.vicinae.com/) launcher
@@ -114,4 +122,4 @@ npm run build
 
 ## Inspiration
 
-This extension is inspired by [Andrew Heiss's Raycast script](https://gist.github.com/andrewheiss/ef3ac7dfef2fdb8477a84e7e27f6853e) for creating dated project folders.
+This extension is inspired by [Andrew Heiss's Raycast script](https://gist.github.com/andrewheiss/ef3ac7dfef2fdb8477a84e7e27f6853e) for creating dated project folders and the [Positron](https://github.com/raycast/extensions/tree/main/extensions/positron) and [VS Code](https://github.com/raycast/extensions/tree/main/extensions/visual-studio-code-recent-projects) raycast extensions.
