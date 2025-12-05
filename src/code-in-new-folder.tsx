@@ -23,13 +23,30 @@ interface Preferences {
 }
 
 /**
- * Expands tilde (~) to home directory
+ * Expands and normalizes paths:
+ * - Empty string defaults to home directory
+ * - Tilde (~) expands to home directory
+ * - Absolute paths (starting with /) are used as-is
+ * - Relative paths are resolved from home directory
  */
 function expandPath(path: string): string {
+  // If empty, default to home directory
+  if (!path || path.trim() === "") {
+    return homedir();
+  }
+
+  // If starts with ~, expand to home directory
   if (path.startsWith("~")) {
     return join(homedir(), path.slice(1));
   }
-  return path;
+
+  // Absolute paths (starting with /) are returned as-is
+  if (path.startsWith("/")) {
+    return path;
+  }
+
+  // Relative paths are resolved from home directory
+  return join(homedir(), path);
 }
 
 /**
@@ -160,6 +177,9 @@ export default function CodeInFolder() {
   // Track the current title as the user types
   const [title, setTitle] = useState("");
 
+  // Track optional override base path
+  const [overrideBasePath, setOverrideBasePath] = useState("");
+
   // Validate preferences early to provide warnings
   const programValidation = validateProgramName(preferences.programName);
   const hasConfigIssue = !programValidation.valid;
@@ -170,21 +190,39 @@ export default function CodeInFolder() {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
 
-  // Build display path based on preferences
-  let displayPathParts = [preferences.basePath];
-
-  if (preferences.addYearToPath) {
-    displayPathParts.push(String(year));
+  // Build display path based on preferences and override
+  // Use override if provided, otherwise use configured base path
+  const isUsingOverride = overrideBasePath.trim() !== "";
+  let displayBasePath: string;
+  if (isUsingOverride) {
+    const trimmedOverride = overrideBasePath.trim();
+    // If relative path (doesn't start with / or ~), show as relative to home
+    if (!trimmedOverride.startsWith("/") && !trimmedOverride.startsWith("~")) {
+      displayBasePath = `~/${trimmedOverride}`;
+    } else {
+      displayBasePath = trimmedOverride;
+    }
+  } else {
+    // If basePath is empty, show ~ as a friendly indicator of home directory
+    displayBasePath = preferences.basePath.trim() === "" ? "~" : preferences.basePath;
   }
+  let displayPathParts = [displayBasePath];
 
-  if (preferences.addMonthDayToPath) {
-    displayPathParts.push(`${month}-${day}`);
+  // Only add year/date subdirectories if NOT using override
+  if (!isUsingOverride) {
+    if (preferences.addYearToPath) {
+      displayPathParts.push(String(year));
+    }
+
+    if (preferences.addMonthDayToPath) {
+      displayPathParts.push(`${month}-${day}`);
+    }
   }
 
   // Process the title for display if it has content
   const processedTitle = title.trim()
     ? processTitle(title, preferences.sanitizePathName, preferences.truncatePathName)
-    : "[TITLE]";
+    : "[NEWFOLDER]";
 
   displayPathParts.push(processedTitle);
 
@@ -234,15 +272,24 @@ export default function CodeInFolder() {
       const day = String(now.getDate()).padStart(2, "0");
       const dateFolder = `${month}-${day}`;
 
-      // Construct the full path based on preferences
-      let pathParts = [expandedBasePath];
+      // Construct the full path based on preferences and override
+      // Use override if provided, otherwise use configured base path
+      const isUsingOverride = overrideBasePath.trim() !== "";
+      const effectiveBasePath = isUsingOverride
+        ? expandPath(overrideBasePath.trim())
+        : expandedBasePath;
 
-      if (preferences.addYearToPath) {
-        pathParts.push(year);
-      }
+      let pathParts = [effectiveBasePath];
 
-      if (preferences.addMonthDayToPath) {
-        pathParts.push(dateFolder);
+      // Only add year/date subdirectories if NOT using override
+      if (!isUsingOverride) {
+        if (preferences.addYearToPath) {
+          pathParts.push(year);
+        }
+
+        if (preferences.addMonthDayToPath) {
+          pathParts.push(dateFolder);
+        }
       }
 
       pathParts.push(processedTitle);
@@ -311,7 +358,7 @@ export default function CodeInFolder() {
           <Action.SubmitForm title="Create Folder" onSubmit={handleSubmit} />
           <Action.Open
             title="Open Extension Settings"
-            target="vicinae://extensions/code-in-folder"
+            target="vicinae://extensions/code-in-new-folder"
             icon={Icon.Gear}
             shortcut={{ modifiers: ["cmd"], key: "," }}
           />
@@ -326,7 +373,7 @@ export default function CodeInFolder() {
       )}
       <Form.TextField
         id="title"
-        title="Project Title"
+        title="New Folder"
         placeholder="Enter your project name"
         value={title}
         onChange={setTitle}
@@ -334,6 +381,14 @@ export default function CodeInFolder() {
       <Form.Description
         title="Folder Path"
         text={displayPath}
+      />
+      <Form.TextField
+        id="overrideBasePath"
+        title="Override Base Path"
+        placeholder="~/custom/path or /tmp/experiments"
+        info="Optional - leave empty to use default configured base path"
+        value={overrideBasePath}
+        onChange={setOverrideBasePath}
       />
       <Form.Description
         text={`This path will be created and opened by ${preferences.programName}`}

@@ -6,8 +6,8 @@
  */
 
 type ExtensionPreferences = {
-  /** Base Directory Path - The base directory where folders will be created (e.g., ~/playground) */
-	"basePath"?: string;
+  /** Base Directory Path - The base directory where folders will be created. Leave empty to use home directory. Supports ~ for home, relative paths, or absolute paths like / or /projects */
+	"basePath": string;
 
 	/** Editor Program Name - The name of the program to open folders with (e.g., 'code' for VS Code, 'positron' for Positron) */
 	"programName"?: string;
@@ -28,15 +28,15 @@ type ExtensionPreferences = {
 declare type Preferences = ExtensionPreferences
 
 declare namespace Preferences {
-  /** Command: Code in Folder */
-	export type CodeInFolder = ExtensionPreferences & {
+  /** Command: Code in New Folder */
+	export type CodeInNewFolder = ExtensionPreferences & {
 		
 	}
 }
 
 declare namespace Arguments {
-  /** Command: Code in Folder */
-	export type CodeInFolder = {
+  /** Command: Code in New Folder */
+	export type CodeInNewFolder = {
 		
 	}
 }
